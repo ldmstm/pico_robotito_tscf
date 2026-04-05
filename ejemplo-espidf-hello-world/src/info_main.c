@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: CC0-1.0
  */
 
+#ifdef RUN_INFO
+
 #include <stdio.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -46,3 +48,4 @@ void app_main(void)
     fflush(stdout);
     esp_restart();
 }
+#endif
