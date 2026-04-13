@@ -1,0 +1,43 @@
+# Proof of Concept (local reference only, do not push)
+PoC_xopxe/
+
+# Agent/Copilot configuration (local only, do not push)
+.github/
+
+# PlatformIO build artifacts
+.pio/
+
+# ESP-IDF build outputs
+build/
+dependencies.lock
+
+# ESP-IDF generated sdkconfig (keep named variants like sdkconfig.*)
+sdkconfig
+
+# ESP-IDF component manager fetched components
+managed_components/
+
+# CMake cache and generated files
+CMakeFiles/
+cmake_install.cmake
+CMakeCache.txt
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Credentials and secrets
+*.env
+secrets.*
