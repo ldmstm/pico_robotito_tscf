@@ -15,7 +15,7 @@
 #define WIFI_PASSWORD "31942649" 
 #define ZENOH_ROUTER_ADDRESS "tcp/192.168.1.7:7447"
 #define ZENOH_NODE_NAME "pico_robotito"
-#define ROS_DOMAIN_ID 0
+#define ROS_DOMAIN_ID 123
 
 static const char *TAG = "main";
 
@@ -51,7 +51,7 @@ app_main (void)
     {
         TickType_t last_wake_time = xTaskGetTickCount();
 
-        rosout_out(&picorosso_rosout, "Alive!", __FILE__, __func__, __LINE__, ROSLOG_INFO);
+        rosout_out("Alive!", __FILE__, __func__, __LINE__, ROSLOG_INFO);
         vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(60000));
     }
 }
