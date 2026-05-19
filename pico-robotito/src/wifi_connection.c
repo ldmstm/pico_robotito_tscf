@@ -14,12 +14,18 @@ network_event_handler (void *arg, esp_event_base_t event_base, int32_t event_id,
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
+        ESP_LOGI(TAG, "WiFi STA started, connecting...");
         esp_wifi_connect ();
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
+    {
+        ESP_LOGI(TAG, "WiFi connected to AP.");
     }
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
+        wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*) event_data;
+        ESP_LOGW(TAG, "WiFi disconnected, reason: %d. Retrying...", event->reason);
         esp_wifi_connect ();
-        ESP_LOGD (TAG, "Reintentando conexion WiFi...");
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {

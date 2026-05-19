@@ -33,6 +33,7 @@ __pycache__/
 *.swp
 *.swo
 *~
+conductor/
 
 # OS artifacts
 .DS_Store
