@@ -1,0 +1,31 @@
+{
+  "name": "rosbotito jazzy desktop",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "ubuntu",
+
+  "runArgs": [
+    "--privileged",
+    "--network=host",
+    "--ipc=host"
+  ],
+
+  "mounts": [
+    "type=bind,source=/dev,target=/dev",
+    "type=bind,source=/home/sopapo/faculad/tscf,target=/workspace/tscf",
+    "type=bind,source=/home/sopapo/.platformio,target=/home/ubuntu/.platformio"
+  ],
+
+  "workspaceFolder": "/workspace/tscf",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "platformio.platformio-ide",
+        "ms-iot.vscode-ros",
+        "ms-vscode.cpptools"
+      ]
+    }
+  }
+}
