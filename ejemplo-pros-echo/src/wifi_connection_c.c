@@ -1,4 +1,4 @@
-#include "wifi_connection.h"
+#include "wifi_connection_c.h"
 
 #include <esp_event.h>
 #include <esp_log.h>

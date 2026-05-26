@@ -1,8 +1,15 @@
-#ifndef WIFI_CONNECTION_H
-#define WIFI_CONNECTION_H
+#ifndef __WIFI_CONNECTION_H
+#define __WIFI_CONNECTION_H
 
-void wifi_connect (const char *ssid, const char *password);
+class WifiConnection
+{
+public:
+    static void connect(const char *ssid, const char *password);
+    static bool connected;
 
-void wifi_wait_connected (void);
+    WifiConnection();
+    WifiConnection(WifiConnection const &); // Don't Implement
+    void operator=(WifiConnection const &); // Don't implement
+};
 
-#endif /* WIFI_CONNECTION_H */
+#endif // __WIFI_CONNECTION_H

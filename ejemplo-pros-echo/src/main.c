@@ -1,19 +1,20 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include "lwip/sockets.h"
 #include <nvs_flash.h>
 #include <string.h>
 
+#include "rosout.h"
 #include "picoros.h"
 #include "picorosso.h"
-#include "rosout.h"
 #include "picoserdes.h"
 #include "ticker.h"
-#include "wifi_connection.h"
+#include "wifi_connection_c.h"
 
-#define WIFI_SSID "OLIVERA2.4GHz"
-#define WIFI_PASSWORD "31942649" 
-#define ZENOH_ROUTER_ADDRESS "tcp/192.168.1.7:7447"
+#define WIFI_SSID "$"
+#define WIFI_PASSWORD "julian1234"
+#define ZENOH_ROUTER_ADDRESS "tcp/10.227.207.75:7447"
 #define ZENOH_NODE_NAME "pico_robotito"
 #define ROS_DOMAIN_ID 123
 
@@ -52,6 +53,6 @@ app_main (void)
         TickType_t last_wake_time = xTaskGetTickCount();
 
         rosout_out("Alive!", __FILE__, __func__, __LINE__, ROSLOG_INFO);
-        vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(60000));
+        vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(10000));
     }
 }
