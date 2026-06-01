@@ -71,8 +71,8 @@ private:
 	void attach(int aPintNumber, int bPinNumber, encType et);
 	int64_t getCountRaw();
 	bool attached;
-  bool direction;
-  bool working;
+    bool direction;
+    bool working;
 };
 
 //Added by Sloeber
