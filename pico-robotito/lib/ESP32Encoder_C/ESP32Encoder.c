@@ -36,7 +36,7 @@ static volatile bool         attachedInterrupt = false;
 
 void
 ESP32Encoder_init(ESP32Encoder *encoder,
-                  bool always_interrput_,
+                  bool always_interrupt_,
                   enc_isr_cb_t enc_isr_cb,
                   void *enc_isr_cb_data)
 {
@@ -80,7 +80,7 @@ ESP32Encoder_destroy(ESP32Encoder *encoder)
 
     if (encoder->attached)
     {
-        ESP32Encoder_detatch(encoder);
+        ESP32Encoder_detach(encoder);
     }
 }
 
@@ -152,12 +152,14 @@ ESP32Encoder_attach(ESP32Encoder *encoder, int a, int b, encType et) {
 		return;
 	}
 	int index = 0;
+	_ENTER_CRITICAL();
 	for (; index < MAX_ESP32_ENCODERS; index++) {
 		if (encoders[index] == NULL) {
 			encoders[index] = encoder;
 			break;
 		}
 	}
+	_EXIT_CRITICAL();
 	if (index == MAX_ESP32_ENCODERS) {
 		while(1) {
 			ESP_LOGE(TAG_ENCODER, "Too many encoders, FAIL!");
@@ -234,6 +236,7 @@ ESP32Encoder_attach(ESP32Encoder *encoder, int a, int b, encType et) {
 	pcnt_event_enable(encoder->unit, PCNT_EVT_L_LIM);
 	pcnt_counter_pause(encoder->unit); // Initial PCNT init
 	/* Register ISR service and enable interrupts for PCNT unit */
+	_ENTER_CRITICAL();
 	if(! attachedInterrupt){
 #ifdef CONFIG_IDF_TARGET_ESP32S2 // esp32-s2 is single core, no ipc call
 			esp_err_t er = pcnt_isr_service_install(0);
@@ -260,6 +263,7 @@ ESP32Encoder_attach(ESP32Encoder *encoder, int a, int b, encType et) {
 
 		attachedInterrupt=true;
 	}
+	_EXIT_CRITICAL();
 
 	// Add ISR handler for this unit
 	if (pcnt_isr_handler_add(encoder->unit, esp32encoder_pcnt_intr_handler, encoder) != ESP_OK) {
@@ -280,34 +284,38 @@ ESP32Encoder_attach(ESP32Encoder *encoder, int a, int b, encType et) {
 }
 
 void 
-ESP32Encoder_attachHalfQuad(ESP32Encoder *encoder, int aPintNumber, int bPinNumber)
+ESP32Encoder_attachHalfQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber)
 {
-	ESP32Encoder_attach(encoder, aPintNumber, bPinNumber, half);
+	ESP32Encoder_attach(encoder, aPinNumber, bPinNumber, half);
 }
 
 void 
-ESP32Encoder_attachSingleEdge(ESP32Encoder *encoder, int aPintNumber, int bPinNumber)
+ESP32Encoder_attachSingleEdge(ESP32Encoder *encoder, int aPinNumber, int bPinNumber)
 {
-	ESP32Encoder_attach(encoder, aPintNumber, bPinNumber, single);
+	ESP32Encoder_attach(encoder, aPinNumber, bPinNumber, single);
 }
 
 void
-ESP32Encoder_attachFullQuad(ESP32Encoder *encoder, int aPintNumber, int bPinNumber)
+ESP32Encoder_attachFullQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber)
 {
-	ESP32Encoder_attach(encoder, aPintNumber, bPinNumber, full);
+	ESP32Encoder_attach(encoder, aPinNumber, bPinNumber, full);
 }
 
 void
 ESP32Encoder_detach(ESP32Encoder *encoder)
 {
+	if (!encoder || !encoder->attached || encoder->unit < 0 || encoder->unit >= MAX_ESP32_ENCODERS) {
+		return;
+	}
 	pcnt_counter_pause(encoder->unit);
-	pcnt_isr_handler_remove(encoder->r_enc_config.unit);
+	pcnt_isr_handler_remove(encoder->unit);
 	encoders[encoder->unit] = NULL;
 	encoder->attached = false;
 }
 
+__attribute__ ((deprecated("Use ESP32Encoder_detach instead")))
 void
-ESP32Encoder_detatch(ESP32Encoder *encoder) __attribute__ ((deprecated("deprecado, perdiste aura primito")))
+ESP32Encoder_detatch(ESP32Encoder *encoder)
 {
 	ESP32Encoder_detach(encoder);
 }
@@ -318,7 +326,6 @@ ESP32Encoder_getCountRaw(ESP32Encoder *encoder)
 	int16_t c;
 	int64_t compensate = 0;
 
-	_ENTER_CRITICAL();
 	pcnt_get_counter_value(encoder->unit, &c);
 	// check if counter overflowed, if so re-read and compensate
 	// see https://github.com/espressif/esp-idf/blob/v4.4.1/tools/unit-test-app/components/test_utils/ref_clock_impl_rmt_pcnt.c#L168-L172
@@ -330,7 +337,6 @@ ESP32Encoder_getCountRaw(ESP32Encoder *encoder)
 			compensate = encoder->r_enc_config.counter_l_lim;
 		}
 	}
-	_EXIT_CRITICAL();
 
 	return compensate + c;
 }
@@ -338,6 +344,7 @@ ESP32Encoder_getCountRaw(ESP32Encoder *encoder)
 void
 ESP32Encoder_setCount(ESP32Encoder *encoder, int64_t value)
 {
+	if (!encoder->attached) return;
 	_ENTER_CRITICAL();
 	encoder->count = value - ESP32Encoder_getCountRaw(encoder);
 	_EXIT_CRITICAL();
@@ -346,6 +353,7 @@ ESP32Encoder_setCount(ESP32Encoder *encoder, int64_t value)
 int64_t
 ESP32Encoder_getCount(ESP32Encoder *encoder)
 {
+	if (!encoder->attached) return 0;
 	_ENTER_CRITICAL();
 	int64_t result = encoder->count + ESP32Encoder_getCountRaw(encoder);
 	_EXIT_CRITICAL();
@@ -354,8 +362,9 @@ ESP32Encoder_getCount(ESP32Encoder *encoder)
 }
 
 int64_t
-ESP32Encoder_clearCount(ESP32Encoder *encode)
+ESP32Encoder_clearCount(ESP32Encoder *encoder)
 {
+	if (!encoder->attached) return ESP_FAIL;
 	_ENTER_CRITICAL();
 	encoder->count = 0;
 	_EXIT_CRITICAL();
@@ -364,20 +373,23 @@ ESP32Encoder_clearCount(ESP32Encoder *encode)
 }
 
 int64_t
-ESP32Encoder_pauseCount(ESP32Encoder *encode)
+ESP32Encoder_pauseCount(ESP32Encoder *encoder)
 {
+	if (!encoder->attached) return ESP_FAIL;
 	return pcnt_counter_pause(encoder->unit);
 }
 
 int64_t
-ESP32Encoder_resumeCount()
+ESP32Encoder_resumeCount(ESP32Encoder *encoder)
 {
+	if (!encoder->attached) return ESP_FAIL;
 	return pcnt_counter_resume(encoder->unit);
 }
 
 void
-ESP32Encoder_setFilter(uint16_t value)
+ESP32Encoder_setFilter(ESP32Encoder *encoder, uint16_t value)
 {
+	if (!encoder->attached) return;
 	if(value>1023)value=1023;
 	if(value==0) {
 		pcnt_filter_disable(encoder->unit);

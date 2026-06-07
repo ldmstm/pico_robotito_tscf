@@ -68,15 +68,15 @@ typedef struct
 } ESP32Encoder;
 
 // ESP32Encoder(...) creator
-void ESP32Encoder_init(ESP32Encoder *encoder, bool always_interrput_, enc_isr_cb_t enc_isr_cb, void *enc_isr_cb_data);
+void ESP32Encoder_init(ESP32Encoder *encoder, bool always_interrupt_, enc_isr_cb_t enc_isr_cb, void *enc_isr_cb_data);
 
 // ~ESP32Encoder() destructor
 void ESP32Encoder_destroy(ESP32Encoder *encoder);
 
 // public methods
-void    ESP32Encoder_attachHalfQuad(ESP32Encoder *encoder, int aPintNumber, int bPinNumber);
-void    ESP32Encoder_attachFullQuad(ESP32Encoder *encoder, int aPintNumber, int bPinNumber);
-void    ESP32Encoder_attachSingleEdge(ESP32Encoder *encoder, int aPintNumber, int bPinNumber);
+void    ESP32Encoder_attachHalfQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber);
+void    ESP32Encoder_attachFullQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber);
+void    ESP32Encoder_attachSingleEdge(ESP32Encoder *encoder, int aPinNumber, int bPinNumber);
 void    ESP32Encoder_setCount(ESP32Encoder *encoder, int64_t value);
 void    ESP32Encoder_setFilter(ESP32Encoder *encoder, uint16_t value);
 void    ESP32Encoder_detach(ESP32Encoder *encoder);
@@ -86,8 +86,8 @@ int64_t ESP32Encoder_pauseCount(ESP32Encoder *encoder);
 int64_t ESP32Encoder_resumeCount(ESP32Encoder *encoder);
 bool    ESP32Encoder_isAttached(ESP32Encoder *encoder);
 
-// deprecado, no se como se maneja esto en gcc es __atrubute__((deprecated)) supongo
-void ESP32Encoder_detatch(ESP32Encoder *encoder);
+// deprecado
+void ESP32Encoder_detatch(ESP32Encoder *encoder) __attribute__ ((deprecated("Use ESP32Encoder_detach instead")));
 
 // private methods
 // void attach(int aPintNumber, int bPinNumber, encType et);
