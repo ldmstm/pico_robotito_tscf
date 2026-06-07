@@ -74,6 +74,7 @@ void ESP32Encoder_init(ESP32Encoder *encoder, bool always_interrupt_, enc_isr_cb
 void ESP32Encoder_destroy(ESP32Encoder *encoder);
 
 // public methods
+void    ESP32Encoder_useInternalWeakPullResistors(puType type);
 void    ESP32Encoder_attachHalfQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber);
 void    ESP32Encoder_attachFullQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber);
 void    ESP32Encoder_attachSingleEdge(ESP32Encoder *encoder, int aPinNumber, int bPinNumber);

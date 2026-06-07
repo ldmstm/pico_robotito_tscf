@@ -10,6 +10,7 @@
 #include "picoserdes.h"
 #include "ticker.h"
 #include "wifi_connection.h"
+#include "robotito_omni.h"
 
 #define WIFI_SSID "VIRSANMAR"
 #define WIFI_PASSWORD "27174858" 
@@ -55,6 +56,13 @@ app_main (void)
     ESP_LOGI(TAG, "Setting up ticker...");
     ticker_setup("tick");
     ESP_LOGI(TAG, "Ticker setup complete.");
+
+    ESP_LOGI(TAG, "Setting up RobotitoOmni...");
+    if (!RobotitoOmni_setup("cmd_vel", "odom"))
+    {
+        ESP_LOGE(TAG, "FAIL RobotitoOmni_setup()");
+    }
+    ESP_LOGI(TAG, "RobotitoOmni setup complete.");
 
     ESP_LOGI(TAG, "Booting completed.");
 

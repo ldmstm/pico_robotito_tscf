@@ -283,7 +283,13 @@ ESP32Encoder_attach(ESP32Encoder *encoder, int a, int b, encType et) {
 	encoder->attached = true;
 }
 
-void 
+void
+ESP32Encoder_useInternalWeakPullResistors(puType type)
+{
+    useInternalWeakPullResistors = type;
+}
+
+void
 ESP32Encoder_attachHalfQuad(ESP32Encoder *encoder, int aPinNumber, int bPinNumber)
 {
 	ESP32Encoder_attach(encoder, aPinNumber, bPinNumber, half);
