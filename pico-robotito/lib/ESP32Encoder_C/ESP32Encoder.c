@@ -283,7 +283,7 @@ ESP32Encoder_attach(ESP32Encoder *encoder, int a, int b, encType et) {
 	encoder->attached = true;
 }
 
-void
+void 
 ESP32Encoder_useInternalWeakPullResistors(puType type)
 {
     useInternalWeakPullResistors = type;

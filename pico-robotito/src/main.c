@@ -1,20 +1,30 @@
+/*
+ * Driver includes
+ */
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <nvs_flash.h>
 #include <string.h>
 
+/*
+ * External lib includes
+ */
 #include "picoros.h"
 #include "picorosso.h"
 #include "rosout.h"
 #include "picoserdes.h"
 #include "ticker.h"
 #include "wifi_connection.h"
+
+/*
+ * Internal lib includes
+ */
 #include "robotito_omni.h"
 
-#define WIFI_SSID "VIRSANMAR"
-#define WIFI_PASSWORD "27174858" 
-#define ZENOH_ROUTER_ADDRESS "tcp/172.21.112.1:7447"
+#define WIFI_SSID "SSID"
+#define WIFI_PASSWORD "PASSWD" 
+#define ZENOH_ROUTER_ADDRESS "tcp/xxx.xxx.xxx.xxx:7447"
 #define ZENOH_NODE_NAME "pico_robotito"
 #define ROS_DOMAIN_ID 123
 

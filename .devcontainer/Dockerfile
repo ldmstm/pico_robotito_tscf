@@ -56,7 +56,8 @@ RUN sudo apt-get update && \
 
 ENV PATH="/home/$USERNAME/.local/bin:${PATH}"
 ENV RMW_IMPLEMENTATION=rmw_zenoh_cpp
-ENV RUST_LOG=debug
+# ENV RUST_LOG=debug
+ENV RUST_LOG=info
 ENV ROS_DOMAIN_ID=123
 
 # ROS env
