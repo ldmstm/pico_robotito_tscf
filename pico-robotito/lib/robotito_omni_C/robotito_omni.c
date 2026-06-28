@@ -238,7 +238,7 @@ static void control_task(void *pvParameters)
   for (;;)
   {
     uint64_t now_ms = pdTICKS_TO_MS(last_wake_time);
-    uint64_t time_step_ms = now_ms - control_cb_time_ms;
+    uint64_t time_step_ms = now_ms - control_cb_time_ms; //TODO: check if this is correctly calculated
 
     if (time_step_ms > 0)
     {
@@ -258,7 +258,7 @@ static void control_task(void *pvParameters)
         for (int i = 0; i < NMOTORS; i++)
         {
           float current_v_t_s = motors[i].last_count / time_step;
-          float output = Fpid_compute(&motors[i].pid, motors[i].target_v_t_s, current_v_t_s, time_step);
+          float output = Fpid_compute(&motors[i].pid, motors[i].target_v_t_s, current_v_t_s, time_step); //TODO: check if this is working properly
 
           set_channel(false, output, motors[i].pwm_timer);
           motors[i].output = output;
@@ -353,7 +353,7 @@ static bool init_motors()
   motors[2].pwm_timer = MCPWM_TIMER_2;
 
   // Enable the weak pull up resistors
-  ESP32Encoder_useInternalWeakPullResistors(up);
+  ESP32Encoder_useInternalWeakPullResistors(none);
 
   for (int i = 0; i < NMOTORS; i++)
   {

@@ -21,6 +21,8 @@
  * Internal lib includes
  */
 #include "robotito_omni.h"
+#include "robotito_vl53ring.h"
+#include <driver/i2c_master.h>
 
 #define WIFI_SSID "SSID"
 #define WIFI_PASSWORD "PASSWD" 
@@ -74,6 +76,25 @@ app_main (void)
     }
     ESP_LOGI(TAG, "RobotitoOmni setup complete.");
 
+    ESP_LOGI(TAG, "Initializing I2C master bus...");
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = I2C_NUM_0,
+        .scl_io_num = 22,
+        .sda_io_num = 21,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t i2c_bus_handle;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &i2c_bus_handle));
+
+    ESP_LOGI(TAG, "Setting up RobotitoVl53Ring...");
+    if (!RobotitoVl53Ring_setup(i2c_bus_handle, "scan"))
+    {
+        ESP_LOGE(TAG, "FAIL RobotitoVl53Ring_setup()");
+    }
+    ESP_LOGI(TAG, "RobotitoVl53Ring setup complete.");
+
     ESP_LOGI(TAG, "Booting completed.");
 
     for (;;)
@@ -81,7 +102,7 @@ app_main (void)
         TickType_t last_wake_time = xTaskGetTickCount();
 
         ESP_LOGD(TAG, "Sending Alive! heartbeat");
-        rosout_out("Alive!", __FILE__, __func__, __LINE__, ROSLOG_INFO);
+        rosout_out("Alive!", __FILE__, __func__, __LINE__, ROSLOG_INFO); //TODO: level should be first parameter
         vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(30000));
     }
 }
