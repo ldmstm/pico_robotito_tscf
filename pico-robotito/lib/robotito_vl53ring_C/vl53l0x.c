@@ -2,8 +2,6 @@
 // Copyright © 2019 Adrian Kennard, Andrews & Arnold Ltd. See LICENCE file for details. GPL 3.0
 // Based on https://github.com/pololu/vl53l0x-arduino
 
-// Migrated to C and esp-idf v5.x i2c_master API by Antigravity
-
 #include "vl53l0x.h"
 #include "esp_timer.h"
 #include "esp_log.h"

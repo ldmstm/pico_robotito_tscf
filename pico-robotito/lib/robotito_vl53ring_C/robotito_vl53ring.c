@@ -156,7 +156,6 @@ static void i2c0_vl53ring_task(void *pvParameters)
       pr_publish_buf(publisher_laser_scan, msg_laser_scan, publisher_buf, sizeof(publisher_buf));
     }
 
-    // pause the task per defined wait period
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(CONINUOUS_PERIOD_MS));
   }
 }
@@ -174,7 +173,6 @@ bool RobotitoVl53Ring_setup(i2c_master_bus_handle_t bus_handle,
   publisher_laser_scan.topic.name = (char *)topic_scan;
   picoros_publisher_declare(&picorosso_node, &publisher_laser_scan);
 
-  /* create task */
   xTaskCreate(
       i2c0_vl53ring_task,
       I2C0_TASK_NAME,
