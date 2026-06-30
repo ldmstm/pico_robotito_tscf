@@ -1,4 +1,0 @@
-idf_component_register(SRCS "info_main.c" "blink_main.c" "pico_main.c"
-                    INCLUDE_DIRS "")
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
