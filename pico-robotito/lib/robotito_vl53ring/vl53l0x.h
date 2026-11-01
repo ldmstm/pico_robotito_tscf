@@ -25,7 +25,7 @@ typedef enum
 // Functions returning const char * are OK for NULL, else error string
 
 // Set up I2C and create the vl53l0x structure, NULL means could not see device on I2C
-vl53l0x_t *vl53l0x_config (i2c_master_bus_handle_t i2c0_bus_hdl, gpio_num_t xshut, uint8_t address, uint8_t io_2v8);
+vl53l0x_t *vl53l0x_config (i2c_master_bus_handle_t i2c0_bus_hdl, gpio_num_t xshut, uint8_t io_2v8);
 // Initialise the VL53L0X
 const char *vl53l0x_init (vl53l0x_t *);
 // End I2C and free the structure

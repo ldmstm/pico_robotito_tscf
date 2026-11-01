@@ -1,5 +1,5 @@
 FILE(GLOB_RECURSE app_sources ${CMAKE_SOURCE_DIR}/src/*.c)
-FILE(GLOB_RECURSE lib_c_sources ${CMAKE_SOURCE_DIR}/lib/*_C/*.c)
+FILE(GLOB_RECURSE lib_c_sources ${CMAKE_SOURCE_DIR}/lib/*/*.c)
 
 set(component_include_dirs
 	${CMAKE_SOURCE_DIR}/include

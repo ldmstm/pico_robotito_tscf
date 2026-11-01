@@ -25,7 +25,7 @@
 #include <driver/i2c_master.h>
 
 #define WIFI_SSID "SSID"
-#define WIFI_PASSWORD "PASSWD" 
+#define WIFI_PASSWORD "PASSWD"
 #define ZENOH_ROUTER_ADDRESS "tcp/xxx.xxx.xxx.xxx:7447"
 #define ZENOH_NODE_NAME "pico_robotito"
 #define ROS_DOMAIN_ID 123
@@ -89,7 +89,7 @@ app_main (void)
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &i2c_bus_handle));
 
     ESP_LOGI(TAG, "Setting up RobotitoVl53Ring...");
-    if (!RobotitoVl53Ring_setup(i2c_bus_handle, "scan"))
+    if (!RobotitoVl53Ring_setup(i2c_bus_handle))
     {
         ESP_LOGE(TAG, "FAIL RobotitoVl53Ring_setup()");
     }

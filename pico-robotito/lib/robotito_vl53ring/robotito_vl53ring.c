@@ -4,6 +4,7 @@
 #include "driver/i2c_master.h"
 #include "vl53l0x.h"
 #include <math.h>
+#include <stdio.h> // snprintf for the per-sensor topic and frame names
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
@@ -20,64 +21,82 @@ static const char *TAG = "vl53ring";
 #define ADDRESS_DEFAULT 0b0101001
 #define CONINUOUS_PERIOD_MS 100 // sampling period / 2
 
-typedef struct
-{
-  gpio_num_t xshut_pin;
-  uint8_t address;
-  vl53l0x_t *vl53l0x;
-} sensor_t;
-
-// TODO verify: "angles are measured around the positive Z axis (counterclockwise, if Z is up)
-//  with zero angle being forward along the x axis"
-static sensor_t sensor_defs[N_SENSORS] = {
-    {.xshut_pin = GPIO_NUM_16, .address = ADDRESS_DEFAULT + 1, .vl53l0x = NULL},
-    {.xshut_pin = GPIO_NUM_17, .address = ADDRESS_DEFAULT + 2, .vl53l0x = NULL},
-    {.xshut_pin = GPIO_NUM_2, .address = ADDRESS_DEFAULT + 3, .vl53l0x = NULL},
-    {.xshut_pin = GPIO_NUM_14, .address = ADDRESS_DEFAULT + 4, .vl53l0x = NULL},
-    {.xshut_pin = GPIO_NUM_12, .address = ADDRESS_DEFAULT + 5, .vl53l0x = NULL},
-    {.xshut_pin = GPIO_NUM_13, .address = ADDRESS_DEFAULT + 6, .vl53l0x = NULL},
-};
+#define SENSOR_ARC_RAD (2.0f * M_PI / N_SENSORS)
+#define RANGE_MIN 0.0f
+#define RANGE_MAX 2.0f
+#define RANGE_VARIANCE 0.01f
+#define VL53_NO_READING 65535
+#define RANGE_TOPIC_NAME_LEN  32
 
 #define TSK_MINIMAL_STACK_SIZE (1024)
 #define I2C0_TASK_NAME "vl53ring_task"
 #define I2C0_TASK_STACK_SIZE (TSK_MINIMAL_STACK_SIZE * 8)
 #define I2C0_TASK_PRIORITY (tskIDLE_PRIORITY + 0)
-#define PUBLISHER_BUF_SIZE 1024
 
-static uint8_t publisher_buf[PUBLISHER_BUF_SIZE]; // pre-allocated buffer for serialization
-
-static picoros_publisher_t publisher_laser_scan = {
-    .topic =
-        {
-            .name = NULL,
-            .type = ROSTYPE_NAME(ros_LaserScan),
-            .rihs_hash = ROSTYPE_HASH(ros_LaserScan),
-        },
-};
-
-static float laser_ranges[N_SENSORS];
-static float laser_intensities[N_SENSORS];
-static ros_LaserScan msg_laser_scan = {
-    .header = {.frame_id = (char *)"laser_link"},
-    .ranges = {
-        .data = laser_ranges,
-        .n_elements = N_SENSORS,
-    },
-    .intensities = {
-        .data = laser_intensities,
-        .n_elements = N_SENSORS,
-    }};
-
-static void init_msg_laser_scan(void)
+typedef struct
 {
-  msg_laser_scan.angle_min = -M_PI / 2;                           // 0.0;
-  msg_laser_scan.angle_max = msg_laser_scan.angle_min + 2 * M_PI; // 2 * M_PI;
-  msg_laser_scan.angle_increment = 2 * M_PI / N_SENSORS;
-  msg_laser_scan.time_increment = 0.0; // FIXME
-  msg_laser_scan.scan_time = CONINUOUS_PERIOD_MS / 1000.0;
-  msg_laser_scan.range_min = SENSOR_RADIUS + 0.003;
-  msg_laser_scan.range_max = SENSOR_RADIUS + 1.2; // 1.2 in default, 2 in long range
-}
+  gpio_num_t xshut_pin;
+  uint8_t address;
+  vl53l0x_t *vl53l0x;
+  float heading_rad;
+  const char *name;
+
+  ros_Range msg;
+  picoros_publisher_t pub;
+  uint8_t pub_buf[256];
+} sensor_t;
+
+#define DECLARE_MSG_RANGE(_fid, _radtype, _fov, _minr, _maxr, _range, _var) \
+  (ros_Range){                                                              \
+    .header = { .frame_id = (_fid) },                                       \
+    .radiation_type = (_radtype),                                           \
+    .field_of_view = (_fov),                                                \
+    .min_range = (_minr),                                                   \
+    .max_range = (_maxr),                                                   \
+    .range = (_range),                                                      \
+    .variance = (_var),                                                     \
+  }
+
+#define DECLARE_PUB_RANGE(_id)              \
+  (picoros_publisher_t){                    \
+    .topic = {                              \
+      .name = "sensor_" #_id "_range",     \
+      .type = ROSTYPE_NAME(ros_Range),      \
+      .rihs_hash = ROSTYPE_HASH(ros_Range), \
+    }                                       \
+  }
+
+#define DECLARE_I2C_VL53(_id, _xs_pin, _addr, _hdng)  \
+  (sensor_t){                                         \
+    .xshut_pin = (_xs_pin),                           \
+    .address = (_addr),                               \
+    .vl53l0x = NULL, /* init at runtime */            \
+    .heading_rad = (_hdng),                           \
+                                                      \
+    .msg = DECLARE_MSG_RANGE(                         \
+      "sensor_" #_id "_link",                         \
+      1, SENSOR_ARC_RAD, RANGE_MIN, RANGE_MAX,        \
+      RANGE_MAX, RANGE_VARIANCE                       \
+    ),                                                \
+                                                      \
+    .pub = DECLARE_PUB_RANGE(_id),                    \
+    .pub_buf = {},                                    \
+  }
+
+/*
+ * Sensor 0 is mounted at the front (+X of base_link); the rest follow clockwise
+ * as installed, so headings decrease by 60 deg. TODO(verify) the physical mount
+ * order against the chassis before trusting the map: a wrong order rotates/mirrors
+ * the whole ring, which is invisible in the log but obvious in rviz.
+ */
+static sensor_t sensor_defs[N_SENSORS] = {
+  DECLARE_I2C_VL53(0, GPIO_NUM_16, ADDRESS_DEFAULT + 1, 0.0f),
+  DECLARE_I2C_VL53(1, GPIO_NUM_17, ADDRESS_DEFAULT + 2, -M_PI / 3.0f),
+  DECLARE_I2C_VL53(2, GPIO_NUM_2,  ADDRESS_DEFAULT + 3, (-2 * M_PI) / 3.0f),
+  DECLARE_I2C_VL53(3, GPIO_NUM_14, ADDRESS_DEFAULT + 4, M_PI),
+  DECLARE_I2C_VL53(4, GPIO_NUM_12, ADDRESS_DEFAULT + 5, (2.0 * M_PI) / 3.0f),
+  DECLARE_I2C_VL53(5, GPIO_NUM_13, ADDRESS_DEFAULT + 6, M_PI / 3.0f),
+};
 
 static bool initialize_ring(i2c_master_bus_handle_t bus_handle)
 {
@@ -106,8 +125,7 @@ static bool initialize_ring(i2c_master_bus_handle_t bus_handle)
     gpio_set_level(pin, 1);
     z_sleep_ms(10);
 
-    sensor_defs[i].vl53l0x = vl53l0x_config(
-        bus_handle, pin, address, true);
+    sensor_defs[i].vl53l0x = vl53l0x_config(bus_handle, pin, true);
 
     if (sensor_defs[i].vl53l0x == NULL)
     {
@@ -130,6 +148,13 @@ static bool initialize_ring(i2c_master_bus_handle_t bus_handle)
     vl53l0x_startContinuous(sensor_defs[i].vl53l0x, CONINUOUS_PERIOD_MS);
   }
 
+  for (int i = 0; i < N_SENSORS; i++)
+  {
+    ESP_LOGI(TAG, "Declaring publisher on [%s]", sensor_defs[i].pub.topic.name);
+    // publisher_laser_scan.topic.name = (char *)topic_scan;
+    picoros_publisher_declare(&picorosso_node, &sensor_defs[i].pub);
+  }
+
   return true;
 }
 
@@ -139,39 +164,35 @@ static void i2c0_vl53ring_task(void *pvParameters)
 
   for (;;)
   {
-    bool new_reading = false;
     for (int i = 0; i < N_SENSORS; i++)
     {
-      if (sensor_defs[i].vl53l0x == NULL) continue;
-      uint16_t range = vl53l0x_readRangeContinuousMillimeters(sensor_defs[i].vl53l0x);
-      if (range < 65535)
-      {
-        new_reading = true;
-        laser_ranges[i] = SENSOR_RADIUS + range / 1000.0f; // mm -> m
-      }
-    }
-    if (new_reading)
-    {
-      picorosso_set_timestamp(&msg_laser_scan.header.stamp);
-      pr_publish_buf(publisher_laser_scan, msg_laser_scan, publisher_buf, sizeof(publisher_buf));
+      sensor_t *s = &sensor_defs[i];
+      if (s->vl53l0x == NULL)
+        continue;
+
+      uint16_t range_mm = vl53l0x_readRangeContinuousMillimeters(s->vl53l0x);
+      ESP_LOGW(TAG, "range[%d] = %d", i, range_mm);
+
+      /*
+       * REP 117: +Inf means "no target within range". RangeSensorLayer treats a
+       * reading >= max_range as a clear when clear_on_max_reading is true, which
+       * empties the cone instead of leaving a stale mark. NaN readings are
+       * silently dropped by the layer, so +Inf is the value we want here.
+       */
+      s->msg.range = (range_mm >= VL53_NO_READING) ? INFINITY : range_mm / 1000.0f;
+      picorosso_set_timestamp(&s->msg.header.stamp);
+      pr_publish_buf(s->pub, s->msg, s->pub_buf, sizeof(s->pub_buf));
     }
 
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(CONINUOUS_PERIOD_MS));
   }
 }
 
-bool RobotitoVl53Ring_setup(i2c_master_bus_handle_t bus_handle,
-                            const char *topic_scan)
+bool RobotitoVl53Ring_setup(i2c_master_bus_handle_t bus_handle)
 {
   ESP_LOGD(TAG, "Setting up...");
 
-  init_msg_laser_scan();
-
   initialize_ring(bus_handle);
-
-  ESP_LOGI(TAG, "Declaring publisher on [%s]", topic_scan);
-  publisher_laser_scan.topic.name = (char *)topic_scan;
-  picoros_publisher_declare(&picorosso_node, &publisher_laser_scan);
 
   xTaskCreate(
       i2c0_vl53ring_task,

@@ -42,3 +42,11 @@ Thumbs.db
 # Credentials and secrets
 *.env
 secrets.*
+
+pico-robotito/install
+pico-robotito/log
+
+# robotito_description build artifacts
+pico-robotito/robotito_description/build
+pico-robotito/robotito_description/install
+pico-robotito/robotito_description/log

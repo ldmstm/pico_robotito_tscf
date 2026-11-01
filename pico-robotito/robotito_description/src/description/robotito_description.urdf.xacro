@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<robot name="robotito" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:property name="radius" value="0.08"/>
+  <xacro:property name="height" value="0.065"/>
+
+  <xacro:property name="n_wheels" value="3"/>
+
+  <xacro:property name="wheel_radius" value="0.0175"/>
+  <xacro:property name="wheel_width" value="0.02"/>
+  <xacro:property name="wheel_mount_r" value="0.06"/>
+  <xacro:property name="wheel_zoff" value="-0.017"/>
+  <xacro:property name="roller_radius" value="0.004"/>
+  <xacro:property name="n_rollers" value="4"/>
+
+  <xacro:property name="az_0" value="${pi/2}"/>
+  <xacro:property name="az_1" value="${-5*pi/6}"/>
+  <xacro:property name="az_2" value="${-pi/6}"/>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder radius="${radius}" length="${height}"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="base_footprint"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0.0 0.0 ${-(wheel_zoff - wheel_radius)}" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:macro name="omni_roller" params="index">
+    <visual>
+      <origin xyz="0 ${(wheel_radius - roller_radius)*cos(2*index*pi/n_rollers)} ${(wheel_radius - roller_radius)*sin(2*index*pi/n_rollers)}" rpy="${index*pi/2} 0 0"/>
+      <geometry>
+        <cylinder radius="${roller_radius}" length="${wheel_width}"/>
+      </geometry>
+      <material name="LightGray">
+        <color rgba="0.8 0.8 0.8 1.0"/>
+      </material>
+    </visual>
+  </xacro:macro>
+
+  <xacro:macro name="omni_wheel" params="prefix azimuth">
+    <link name="${prefix}_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="Gray">
+          <color rgba="0.5 0.5 0.5 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 ${pi/2} 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <xacro:omni_roller index="0"/>
+      <xacro:omni_roller index="1"/>
+      <xacro:omni_roller index="2"/>
+      <xacro:omni_roller index="3"/>
+    </link>
+
+    <joint name="${prefix}_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_link"/>
+      <origin xyz="${wheel_mount_r*cos(azimuth)} ${wheel_mount_r*sin(azimuth)} ${wheel_zoff}" rpy="0 0 ${azimuth}"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:omni_wheel prefix="wheel_0" azimuth="${az_0}"/>
+  <xacro:omni_wheel prefix="wheel_1" azimuth="${az_1}"/>
+  <xacro:omni_wheel prefix="wheel_2" azimuth="${az_2}"/>
+
+  <xacro:property name="vl53ring_radio" value="0.06" />
+  <xacro:property name="vl53ring_angulo" value="-${pi / 9}" />
+  <xacro:property name="vl53ring_altura" value="-0.017" />
+
+  <xacro:macro name="sensor_vl53" params="index yaw">
+    <link name="sensor_${index}_link">
+      <visual>
+        <geometry>
+          <box size="0.01 0.02 0.01" />
+        </geometry>
+        <material name="blue">
+          <color rgba="0.0 0.3 0.8 1.0" />
+        </material>
+      </visual>
+    </link>
+
+    <joint name="sensor_${index}_joint" type="fixed">
+      <parent link="base_link" />
+      <child link="sensor_${index}_link" />
+      <origin xyz="${vl53ring_radio * cos(yaw)} ${vl53ring_radio * sin(yaw)} ${vl53ring_altura}"
+              rpy="0 ${vl53ring_angulo} ${yaw}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:sensor_vl53 index="0" yaw="${0 * pi / 3}" />
+  <xacro:sensor_vl53 index="1" yaw="${1 * pi / 3}" />
+  <xacro:sensor_vl53 index="2" yaw="${2 * pi / 3}" />
+  <xacro:sensor_vl53 index="3" yaw="${3 * pi / 3}" />
+  <xacro:sensor_vl53 index="4" yaw="${4 * pi / 3}" />
+  <xacro:sensor_vl53 index="5" yaw="${5 * pi / 3}" />
+
+</robot>

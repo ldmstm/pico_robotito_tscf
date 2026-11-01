@@ -17,6 +17,8 @@ static const char __attribute__((unused)) TAG[] = "ranger";
 
 #define TIMEOUT (pdMS_TO_TICKS(10)) // I2C command timeout
 
+// #define CONFIG_VL53L0X_DEBUG
+
 #ifdef CONFIG_VL53L0X_DEBUG
 #define VL53L0X_LOG ESP_LOGI // Set to allow I2C logging
 #else
@@ -549,7 +551,7 @@ vl53l0x_setMeasurementTimingBudget(vl53l0x_t *v, uint32_t budget_us)
 }
 
 vl53l0x_t *
-vl53l0x_config(i2c_master_bus_handle_t bus_handle, gpio_num_t xshut, uint8_t address, uint8_t io_2v8)
+vl53l0x_config(i2c_master_bus_handle_t bus_handle, gpio_num_t xshut, uint8_t io_2v8)
 {
    if (xshut >= 0)
    {
@@ -573,7 +575,7 @@ vl53l0x_config(i2c_master_bus_handle_t bus_handle, gpio_num_t xshut, uint8_t add
    v->dev_handle = dev_handle;
    v->xshut = xshut;
    v->io_2v8 = io_2v8;
-   v->address = address;
+   v->address = ADDRESS_DEFAULT;
    v->io_timeout = 100;
    return v;
 }
@@ -773,6 +775,10 @@ void vl53l0x_setAddress(vl53l0x_t *v, uint8_t new_addr)
 {
    vl53l0x_writeReg8Bit(v, I2C_SLAVE_DEVICE_ADDRESS, new_addr & 0x7F);
    v->address = new_addr;
+   esp_err_t err = i2c_master_device_change_address(v->dev_handle, new_addr, -1);
+   if (err != ESP_OK) {
+      ESP_LOGE(TAG, "vl53l0x_setAddress(%p, %d) = %d", v, new_addr, err);
+   }
 }
 
 uint8_t

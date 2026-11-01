@@ -32,9 +32,23 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     python-is-python3 \
     curl \
+    nano \
+    tmux \
     && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 7447
+# X11 sobre VNC
+RUN apt-get update && \
+    apt-get install --no-install-suggests --no-install-recommends -y \
+    tigervnc-standalone-server \
+    tigervnc-tools \
+    icewm \
+    xterm \
+    menu \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV DISPLAY=:99
+
+EXPOSE 5299
 
 # Sudo config
 RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME && \
@@ -51,8 +65,16 @@ RUN sudo apt-get update && \
         ros-${ROS_DISTRO}-cartographer-ros \
         ros-${ROS_DISTRO}-navigation2 \
         ros-${ROS_DISTRO}-nav2-bringup \
+        ros-${ROS_DISTRO}-joint-state-publisher-gui \
+        ros-${ROS_DISTRO}-xacro \
         ros-${ROS_DISTRO}-rmw-zenoh-cpp && \
     sudo rm -rf /var/lib/apt/lists/*
+
+EXPOSE 7447
+
+# PlatformIO
+RUN pip install platformio --break-system-packages && \
+    rm -rf ~/.cache/pip/
 
 ENV PATH="/home/$USERNAME/.local/bin:${PATH}"
 ENV RMW_IMPLEMENTATION=rmw_zenoh_cpp

@@ -13,8 +13,8 @@
 
   "mounts": [
     "type=bind,source=/dev,target=/dev",
-    "type=bind,source=/home/sopapo/faculad/tscf,target=/workspace/tscf",
-    "type=bind,source=/home/sopapo/.platformio,target=/home/ubuntu/.platformio"
+    "type=bind,source=${localWorkspaceFolder},target=/workspace/tscf",
+    "type=bind,source=${localEnv:HOME}/.platformio,target=/home/ubuntu/.platformio"
   ],
 
   "workspaceFolder": "/workspace/tscf",

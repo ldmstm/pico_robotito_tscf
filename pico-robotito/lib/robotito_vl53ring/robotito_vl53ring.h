@@ -8,8 +8,7 @@
 extern "C" {
 #endif
 
-bool RobotitoVl53Ring_setup(i2c_master_bus_handle_t bus_handle,
-                            const char *topic_scan);
+bool RobotitoVl53Ring_setup(i2c_master_bus_handle_t bus_handle);
 
 #ifdef __cplusplus
 }
