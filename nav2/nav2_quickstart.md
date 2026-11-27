@@ -50,13 +50,3 @@ En este momento ya se puede ver el resultado del LaserScan y los mapas de costos
 y se puede usar `2D Goal Pose` para indicarle a Robotito hacia donde debe moverse.
 
 Tambien se puede mover al robot manualmente y la visualizacion se actualiza sola (por `/odom`).
-
-#### Nota sobre X11/Wayland (VNC)
-
-RViz2 es un programa que corre sobre X11, si el sistema nativamente tiene un servidor ejecutando
-se puede usar la variable de entorno `DISPLAY` para desplegarlo en el escritorio nativo.
-
-Para sistemas que no poseen un servidor nativo (Windows + WSL, Linux con Wayland, etc) se preinstala
-un servidor VNC y una instalacion minima de icewm. En el entorno de Docker se debe configurar una password
-para el servidor (mediante `vncpasswd`) y se debe iniciar el servidor (`vncserver :99`).
-Desde el host se puede conectar a `localhost:5999` para poder interactuar con el servidor VNC.

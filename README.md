@@ -45,7 +45,6 @@ Software requerido:
 - VS Code + Dev Containers o Docker CLI
 - Acceso al dispositivo serie del ESP32 desde el host
 - Red WiFi 2.4 GHz
-- X11 si se quiere usar `rviz2`
 
 Repositorios externos:
 - `xopxe/picorosso-espidf`: base de la interfaz de comunicación
@@ -221,6 +220,10 @@ echo $XDG_RUNTIME_DIR
 ls /tmp/.X11-unix
 ```
 
+### 8. Stack Nav2
+
+Ver `nav2/nav2_quickstart.md` por mas informacion.
+
 ---
 
 ## Problemas conocidos y soluciones
@@ -250,26 +253,14 @@ CONFIG_XTAL_FREQ=26
 
 **Solución:** ejecutar el bootstrap de PlatformIO, clonar manualmente el repo en `.pio/libdeps/esp32thing`, inicializar submódulos y compilarlo con `cmake` + `make`.
 
-### 3. Sensores laterales no portados
-
-**Problema:** se intentó portar el firmware de los sensores laterales.
-
-**Causa:** no se pudo adaptar la API del driver I2C.
-
-**Estado:** no resuelto.
-
-### 4. RViz2 dentro del contenedor no abre
+### 3. RViz2 dentro del contenedor no abre
 
 **Problema:** `ros2 run rviz2 rviz2` no muestra interfaz o falla al arrancar.
 
-**Causas típicas:**
-- `DISPLAY` no forwardeado,
-- `/tmp/.X11-unix` no montado,
-- variables `DISPLAY` / `XDG_RUNTIME_DIR` inconsistentes,
-- falta de acceso a renderizado.
+RViz2 es un programa que corre sobre X11, si el sistema nativamente tiene un servidor ejecutando
+se puede usar la variable de entorno `DISPLAY` para desplegarlo en el escritorio nativo.
 
-**Solución mínima:**
-- habilitar X11 en el host con `xhost`,
-- forwardear `DISPLAY`,
-- montar `/tmp/.X11-unix`,
-- verificar las variables dentro del contenedor.
+Para sistemas que no poseen un servidor nativo (Windows + WSL, Linux con Wayland, etc) se preinstala
+un servidor VNC y una instalacion minima de icewm. En el entorno de Docker se debe configurar una password
+para el servidor (mediante `vncpasswd`) y se debe iniciar el servidor (`vncserver :99`).
+Desde el host se puede conectar a `localhost:5999` para poder interactuar con el servidor VNC.
